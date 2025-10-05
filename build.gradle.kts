@@ -1,6 +1,5 @@
-plugins {
-    application
-}
+import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
+import org.jetbrains.kotlin.gradle.plugin.KotlinBasePluginWrapper
 
 buildscript {
     repositories {
@@ -9,36 +8,22 @@ buildscript {
         maven("https://plugins.gradle.org/m2/")
     }
     dependencies {
-        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.22")
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.20")
     }
 }
 
-apply(plugin = "org.jetbrains.kotlin.jvm")
+allprojects {
+    group = "com.example"
+    version = "2.0-SNAPSHOT"
 
-group = "com.example"
-version = "1.0-SNAPSHOT"
-
-repositories {
-    mavenCentral()
-    maven("https://maven.pkg.jetbrains.space/kotlin/p/kotlin/releases")
+    repositories {
+        mavenCentral()
+        maven("https://maven.pkg.jetbrains.space/kotlin/p/kotlin/releases")
+    }
 }
 
-dependencies {
-    implementation(kotlin("stdlib"))
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
-
-    testImplementation(kotlin("test"))
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
-}
-
-tasks.test {
-    useJUnitPlatform()
-}
-
-kotlin {
-    jvmToolchain(17)
-}
-
-application {
-    mainClass.set("com.example.workflow.sample.MainKt")
+subprojects {
+    plugins.withType<KotlinBasePluginWrapper> {
+        the<KotlinJvmProjectExtension>().jvmToolchain(17)
+    }
 }

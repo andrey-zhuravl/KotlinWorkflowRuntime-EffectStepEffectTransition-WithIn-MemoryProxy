@@ -1,0 +1,2 @@
+-- Placeholder for event store schema. The production version will be applied through Flyway.
+-- Tables: event_journal, snapshots, outbox, timers, sagas, saga_steps.
