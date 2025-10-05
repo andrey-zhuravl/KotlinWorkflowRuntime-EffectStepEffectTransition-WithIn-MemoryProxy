@@ -1,0 +1,3 @@
+@ECHO OFF
+SET GRADLE_EXE=gradle
+"%GRADLE_EXE%" %*
