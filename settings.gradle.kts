@@ -17,5 +17,11 @@ include(
     "workflow-saga",
     "workflow-gateway",
     "workflow-sample",
-    "workflow-integration-tests"
+    "workflow-integration-tests",
+    "workflow-projections",
+    "workflow-human",
+    "workflow-subflow",
+    "workflow-security",
+    "workflow-admin",
+    "workflow-devtools"
 )

@@ -1,0 +1,48 @@
+CREATE TABLE IF NOT EXISTS outbox(
+  id UUID PRIMARY KEY,
+  channel TEXT NOT NULL,
+  msg_key TEXT NOT NULL,
+  headers JSONB NOT NULL DEFAULT '{}',
+  payload_json JSONB NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL,
+  published_at TIMESTAMPTZ NULL,
+  attempts INT NOT NULL DEFAULT 0,
+  last_error TEXT NULL,
+  tenant_id TEXT NOT NULL DEFAULT 'public'
+);
+CREATE INDEX IF NOT EXISTS outbox_published_idx ON outbox (published_at) WHERE published_at IS NULL;
+
+CREATE TABLE IF NOT EXISTS archive_manifest(
+  id BIGSERIAL PRIMARY KEY,
+  range_from BIGINT NOT NULL,
+  range_to BIGINT NOT NULL,
+  location TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS schema_versions(
+  type TEXT,
+  version INT,
+  schema_json JSONB,
+  PRIMARY KEY(type, version)
+);
+
+ALTER TABLE IF EXISTS event_journal
+  ADD COLUMN IF NOT EXISTS prev_hash BYTEA,
+  ADD COLUMN IF NOT EXISTS hash BYTEA,
+  ADD COLUMN IF NOT EXISTS hash_algo TEXT DEFAULT 'SHA-256',
+  ADD COLUMN IF NOT EXISTS tenant_id TEXT NOT NULL DEFAULT 'public';
+
+ALTER TABLE IF EXISTS snapshots
+  ADD COLUMN IF NOT EXISTS tenant_id TEXT NOT NULL DEFAULT 'public';
+ALTER TABLE IF EXISTS timers
+  ADD COLUMN IF NOT EXISTS tenant_id TEXT NOT NULL DEFAULT 'public',
+  ADD COLUMN IF NOT EXISTS cron_expr TEXT NULL,
+  ADD COLUMN IF NOT EXISTS jitter_ms INT NULL,
+  ADD COLUMN IF NOT EXISTS tags TEXT[] DEFAULT '{}';
+ALTER TABLE IF EXISTS sagas
+  ADD COLUMN IF NOT EXISTS tenant_id TEXT NOT NULL DEFAULT 'public';
+ALTER TABLE IF EXISTS projection_offsets
+  ADD COLUMN IF NOT EXISTS tenant_id TEXT NOT NULL DEFAULT 'public';
+ALTER TABLE IF EXISTS child_workflows
+  ADD COLUMN IF NOT EXISTS tenant_id TEXT NOT NULL DEFAULT 'public';
