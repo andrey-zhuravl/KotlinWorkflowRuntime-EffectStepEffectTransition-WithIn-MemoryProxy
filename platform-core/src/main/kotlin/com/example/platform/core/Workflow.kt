@@ -110,6 +110,15 @@ data class GuardContext<S, C>(
     fun snapshot(): S = state
 }
 
+data class CommandMetadata(
+    val commandId: String? = null,
+    val correlationId: String? = null,
+    val tenantId: String? = null,
+    val priority: CommandPriority = CommandPriority.NORMAL,
+)
+
+enum class CommandPriority { HIGH, NORMAL, LOW }
+
 class Effect<S, E, R>(
     internal val steps: List<EffectStep<S, E, R>>
 ) {
@@ -178,6 +187,13 @@ sealed interface TimerInstruction {
     data class Cron(val key: String, val expression: String, val payload: Any, val jitter: Duration?) : TimerInstruction
     data class Cancel(val key: String) : TimerInstruction
 }
+
+data class TimerCommand<C>(
+    val command: C,
+    val targetWorkflowType: String? = null,
+    val targetWorkflowId: String? = null,
+    val metadata: CommandMetadata = CommandMetadata(),
+)
 
 data class OutboxMessage(
     val id: String,
