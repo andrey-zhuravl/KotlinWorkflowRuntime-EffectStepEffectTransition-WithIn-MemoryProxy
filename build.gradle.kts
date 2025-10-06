@@ -4,9 +4,8 @@ import java.io.File
 val gradleHomeDir = gradle.gradleHomeDir ?: error("Gradle home unavailable")
 val libDir = gradleHomeDir.resolve("lib")
 
-val kotlinJars = libDir.listFiles { file ->
-    file.isFile && file.name.startsWith("kotlin-") && file.name.endsWith(".jar")
-}?.toList() ?: error("Kotlin jars not found in $libDir")
+val kotlinJars = libDir.listFiles { file -> file.isFile && file.name.startsWith("kotlin-") && file.name.endsWith(".jar") }?.toList()
+    ?: error("Kotlin jars not found in $libDir")
 val compilerJars = kotlinJars.filter { jar ->
     jar.name.contains("compiler") || jar.name.contains("scripting") || jar.name.contains("daemon")
 }
