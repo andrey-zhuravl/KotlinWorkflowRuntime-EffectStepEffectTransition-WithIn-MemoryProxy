@@ -4,11 +4,17 @@ import com.example.platform.core.Effect
 import com.example.platform.core.Effects
 import com.example.platform.core.Workflow
 import com.example.platform.core.WorkflowContext
+import com.example.platform.core.annotations.Command
+import com.example.platform.core.annotations.Event
+import com.example.platform.core.annotations.Reply
+import com.example.platform.core.annotations.WorkflowService
+import kotlinx.serialization.Serializable
 
 /** Represents order lifecycle statuses. */
 public enum class OrderStatus { New, Created, Approved, Shipped, Cancelled }
 
 /** Snapshot of the order state. */
+@Serializable
 public data class OrderState(
     val id: String,
     val items: List<String>,
@@ -16,30 +22,60 @@ public data class OrderState(
 )
 
 /** Supported commands for the order workflow. */
+@Command
+@Serializable
 public sealed interface OrderCommand
+
+@Serializable
 public data class CreateOrder(val customer: String) : OrderCommand
+
+@Serializable
 public data class AddItem(val item: String) : OrderCommand
+
+@Serializable
 public data object Approve : OrderCommand
+
+@Serializable
 public data object Ship : OrderCommand
+
+@Serializable
 public data object Cancel : OrderCommand
 
 /** Events emitted by the order workflow. */
+@Event
+@Serializable
 public sealed interface OrderEvent
+
+@Serializable
 public data class OrderCreated(val customer: String) : OrderEvent
+
+@Serializable
 public data class ItemAdded(val item: String) : OrderEvent
+
+@Serializable
 public data object OrderApproved : OrderEvent
+
+@Serializable
 public data object OrderShipped : OrderEvent
+
+@Serializable
 public data object OrderCancelled : OrderEvent
 
 /** Reply returned to callers. */
+@Reply
+@Serializable
 public sealed interface OrderReply {
     public val state: OrderState
 
+    @Serializable
     public data class Ok(override val state: OrderState) : OrderReply
+
+    @Serializable
     public data class Error(val message: String, override val state: OrderState) : OrderReply
 }
 
 /** Workflow implementing the order domain logic. */
+@WorkflowService("order")
 public class OrderWorkflow : Workflow<OrderState, OrderCommand, OrderEvent, OrderReply> {
     override val name: String = "OrderWorkflow"
 

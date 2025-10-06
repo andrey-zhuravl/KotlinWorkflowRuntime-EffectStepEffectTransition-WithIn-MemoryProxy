@@ -25,6 +25,19 @@ public class WorkflowEngine<S, C, E, R>(
     private val store = InMemoryEventStore<S, E> { workflow.initialState(it) }
     private val mailboxes = ConcurrentHashMap<String, Channel<CommandEnvelope<C, R>>>()
 
+    /** Registers the provided [workflow] ensuring it matches the engine binding. */
+    public fun register(workflow: Workflow<S, C, E, R>) {
+        if (workflow::class != this.workflow::class) {
+            error("WorkflowEngine already bound to ${this.workflow::class.qualifiedName}")
+        }
+    }
+
+    /** Creates a proxy for the given [workflow] and instance [id]. */
+    public fun createProxy(workflow: Workflow<S, C, E, R>, id: String): WorkflowProxy<S, C, E, R> {
+        register(workflow)
+        return proxyFor(id)
+    }
+
     /** Returns a proxy bound to the specified workflow instance identifier. */
     public fun proxyFor(id: String): WorkflowProxy<S, C, E, R> {
         val mailbox = mailboxes.computeIfAbsent(id) { createMailbox(id) }

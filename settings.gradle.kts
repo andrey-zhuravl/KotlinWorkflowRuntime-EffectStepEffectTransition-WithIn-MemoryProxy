@@ -1,7 +1,14 @@
 pluginManagement {
     repositories {
+        maven { url = uri("https://plugins.gradle.org/m2/") }
         gradlePluginPortal()
-        maven { url = uri("https://cache-redirector.jetbrains.com/maven-central") }
+        mavenCentral()
+    }
+}
+
+dependencyResolutionManagement {
+    repositories {
+        mavenCentral()
     }
 }
 

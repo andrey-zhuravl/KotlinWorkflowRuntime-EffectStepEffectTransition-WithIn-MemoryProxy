@@ -1,13 +1,15 @@
 package com.example.sample.order
 
 import com.example.platform.runtime.local.WorkflowEngine
+import com.example.sample.order.generated.OrderWorkflowGenerated
 import kotlinx.coroutines.runBlocking
 
 /** Entry point demonstrating the order workflow runtime. */
 public fun main() = runBlocking {
     val workflow = OrderWorkflow()
     val engine = WorkflowEngine(workflow)
-    val proxy = engine.proxyFor("order-1")
+    OrderWorkflowGenerated.register(engine, workflow)
+    val proxy = OrderWorkflowGenerated.proxy(engine, "order-1", workflow)
 
     println("== Starting order workflow demo ==")
     println(proxy.ask(CreateOrder("Alice")))
