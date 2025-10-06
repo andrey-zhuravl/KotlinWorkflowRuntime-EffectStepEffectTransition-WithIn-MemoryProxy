@@ -1,18 +1,8 @@
 package com.example.platform.devtools
 
-import com.example.platform.core.CommandMetadata
 import com.example.platform.runtime.CommandEnvelope
 import com.example.platform.runtime.WorkflowRuntime
 import kotlinx.coroutines.runBlocking
-
-data class ScenarioCommand(
-    val workflowType: String,
-    val workflowId: String,
-    val command: Any,
-    val metadata: CommandMetadata = CommandMetadata(),
-)
-
-data class ScenarioResult(val replies: List<Any?>)
 
 class ScenarioRunner(private val runtime: WorkflowRuntime) {
     fun run(commands: List<ScenarioCommand>): ScenarioResult = runBlocking {

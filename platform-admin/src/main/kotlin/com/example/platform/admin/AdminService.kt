@@ -1,6 +1,5 @@
 package com.example.platform.admin
 
-import com.example.platform.persistence.jdbc.JournalEntry
 import com.example.platform.persistence.jdbc.WorkflowPersistence
 
 class AdminService(private val persistence: WorkflowPersistence) {
@@ -14,15 +13,3 @@ class AdminService(private val persistence: WorkflowPersistence) {
         return WorkflowEventsView(workflowType, workflowId, entries)
     }
 }
-
-data class WorkflowStateView(
-    val workflowType: String,
-    val workflowId: String,
-    val state: Any?,
-)
-
-data class WorkflowEventsView(
-    val workflowType: String,
-    val workflowId: String,
-    val events: List<JournalEntry<Any>>,
-)

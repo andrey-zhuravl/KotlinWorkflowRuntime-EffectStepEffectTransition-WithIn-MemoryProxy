@@ -1,28 +1,5 @@
 package com.example.platform.ksp
 
-import kotlin.reflect.KClass
-
-sealed interface Descriptor
-
-data class WorkflowDescriptor(
-    val type: String,
-    val workflowClass: KClass<*>,
-    val stateClass: KClass<*>,
-    val commandClass: KClass<*>,
-    val eventClass: KClass<*>,
-    val replyClass: KClass<*>,
-) : Descriptor
-
-data class ProjectionDescriptor(
-    val name: String,
-    val handlerClass: KClass<*>,
-) : Descriptor
-
-data class SagaDescriptor(
-    val name: String,
-    val handlerClass: KClass<*>,
-) : Descriptor
-
 object ServiceCatalog {
     private val workflows = mutableListOf<WorkflowDescriptor>()
     private val projections = mutableListOf<ProjectionDescriptor>()

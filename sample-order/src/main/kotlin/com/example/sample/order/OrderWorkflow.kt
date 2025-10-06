@@ -1,17 +1,13 @@
 package com.example.sample.order
 
-import com.example.platform.core.Command
 import com.example.platform.core.CommandMetadata
 import com.example.platform.core.Effect
-import com.example.platform.core.Event
 import com.example.platform.core.OutboxMessage
-import com.example.platform.core.Reply
 import com.example.platform.core.TimerCommand
 import com.example.platform.core.Workflow
 import com.example.platform.core.WorkflowContext
 import com.example.platform.core.WorkflowService
 import java.time.Duration
-import java.time.Instant
 import java.util.UUID
 
 @WorkflowService("order")
@@ -29,7 +25,7 @@ class OrderWorkflow : Workflow<OrderState, OrderCommand, OrderEvent, OrderReply>
     override suspend fun onCommand(
         state: OrderState,
         command: OrderCommand,
-        ctx: WorkflowContext<OrderState, OrderCommand, OrderEvent, OrderReply>
+        ctx: WorkflowContext<OrderState, OrderCommand, OrderEvent, OrderReply>,
     ): Effect<OrderState, OrderEvent, OrderReply> = when (command) {
         is OrderCommand.Create -> handleCreate(state, command, ctx)
         is OrderCommand.Approve -> handleApprove(state, command, ctx)
@@ -39,7 +35,7 @@ class OrderWorkflow : Workflow<OrderState, OrderCommand, OrderEvent, OrderReply>
     private fun handleCreate(
         state: OrderState,
         command: OrderCommand.Create,
-        ctx: WorkflowContext<OrderState, OrderCommand, OrderEvent, OrderReply>
+        ctx: WorkflowContext<OrderState, OrderCommand, OrderEvent, OrderReply>,
     ): Effect<OrderState, OrderEvent, OrderReply> {
         if (state.exists) {
             return ctx.effects.reply { OrderReply.AlreadyExists(state.snapshot()) }
@@ -63,7 +59,7 @@ class OrderWorkflow : Workflow<OrderState, OrderCommand, OrderEvent, OrderReply>
     private fun handleApprove(
         state: OrderState,
         command: OrderCommand.Approve,
-        ctx: WorkflowContext<OrderState, OrderCommand, OrderEvent, OrderReply>
+        ctx: WorkflowContext<OrderState, OrderCommand, OrderEvent, OrderReply>,
     ): Effect<OrderState, OrderEvent, OrderReply> {
         if (!state.exists) {
             return ctx.effects.reply { OrderReply.NotFound(command.id) }
@@ -76,8 +72,8 @@ class OrderWorkflow : Workflow<OrderState, OrderCommand, OrderEvent, OrderReply>
             .persist(
                 OrderEvent.OrderApproved(
                     approvedBy = command.user,
-                    approvedAt = ctx.now()
-                )
+                    approvedAt = ctx.now(),
+                ),
             )
             .thenTransition { it.approved(command.user, ctx.now()) }
             .thenReply { OrderReply.Accepted(it.snapshot()) }
@@ -86,7 +82,7 @@ class OrderWorkflow : Workflow<OrderState, OrderCommand, OrderEvent, OrderReply>
     private fun handleShip(
         state: OrderState,
         command: OrderCommand.Ship,
-        ctx: WorkflowContext<OrderState, OrderCommand, OrderEvent, OrderReply>
+        ctx: WorkflowContext<OrderState, OrderCommand, OrderEvent, OrderReply>,
     ): Effect<OrderState, OrderEvent, OrderReply> {
         if (!state.exists) {
             return ctx.effects.reply { OrderReply.NotFound(command.id) }
@@ -117,95 +113,3 @@ class OrderWorkflow : Workflow<OrderState, OrderCommand, OrderEvent, OrderReply>
             }
     }
 }
-
-@Command
-sealed interface OrderCommand {
-    val id: String
-
-    data class Create(
-        override val id: String,
-        val customerId: String,
-        val amount: Long
-    ) : OrderCommand
-
-    data class Approve(
-        override val id: String,
-        val user: String
-    ) : OrderCommand
-
-    data class Ship(
-        override val id: String
-    ) : OrderCommand
-}
-
-@Event
-sealed interface OrderEvent {
-    data class OrderCreated(val customerId: String, val amount: Long) : OrderEvent
-    data class OrderApproved(val approvedBy: String, val approvedAt: Instant) : OrderEvent
-    data class OrderShipped(val shippedAt: Instant) : OrderEvent
-}
-
-@Reply
-sealed interface OrderReply {
-    data class Accepted(val order: OrderView) : OrderReply
-    data class AlreadyExists(val order: OrderView) : OrderReply
-    data class NotAllowed(val reason: String, val order: OrderView) : OrderReply
-    data class NotFound(val id: String) : OrderReply
-}
-
-data class OrderState(
-    val id: String,
-    val status: Status = Status.New,
-    val customerId: String? = null,
-    val amount: Long = 0,
-    val approvedBy: String? = null,
-    val approvedAt: Instant? = null,
-    val shippedAt: Instant? = null
-) {
-    enum class Status { New, Created, Approved, Shipped }
-
-    val exists: Boolean get() = customerId != null
-    val isApproved: Boolean get() = status == Status.Approved || status == Status.Shipped
-
-    fun created(customerId: String, amount: Long): OrderState = copy(
-        status = Status.Created,
-        customerId = customerId,
-        amount = amount
-    )
-
-    fun approved(user: String, at: Instant): OrderState = copy(
-        status = Status.Approved,
-        approvedBy = user,
-        approvedAt = at
-    )
-
-    fun shipped(at: Instant): OrderState = copy(
-        status = Status.Shipped,
-        shippedAt = at
-    )
-
-    fun snapshot(): OrderView = OrderView(
-        id = id,
-        status = status.name,
-        customerId = customerId,
-        amount = amount,
-        approvedBy = approvedBy,
-        approvedAt = approvedAt,
-        shippedAt = shippedAt
-    )
-}
-
-data class OrderView(
-    val id: String,
-    val status: String,
-    val customerId: String?,
-    val amount: Long,
-    val approvedBy: String?,
-    val approvedAt: Instant?,
-    val shippedAt: Instant?
-)
-
-data class ShippingNotification(
-    val orderId: String,
-    val shippedAt: Instant,
-)
