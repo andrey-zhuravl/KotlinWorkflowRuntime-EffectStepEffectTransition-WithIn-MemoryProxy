@@ -12,15 +12,21 @@ class OrderWorkflowTest {
         val workflow = OrderWorkflow()
         val engine = WorkflowEngine(workflow)
         val proxy = engine.proxyFor("order-test")
+        val observed = mutableListOf<OrderStatus>()
+        OrderWorkflowHooks.onStateCommitted = { observed += it.status }
 
-        val create = proxy.ask(CreateOrder("Bob"))
-        assertIs<OrderReply.Ok>(create)
-        val add1 = proxy.ask(AddItem("Item-1"))
-        assertIs<OrderReply.Ok>(add1)
-        val approve = proxy.ask(Approve)
-        assertIs<OrderReply.Ok>(approve)
-        val ship = proxy.ask(Ship)
-        assertIs<OrderReply.Ok>(ship)
+        try {
+            val create = proxy.ask(CreateOrder("Bob"))
+            assertIs<OrderReply.Ok>(create)
+            val add1 = proxy.ask(AddItem("Item-1"))
+            assertIs<OrderReply.Ok>(add1)
+            val approve = proxy.ask(Approve)
+            assertIs<OrderReply.Ok>(approve)
+            val ship = proxy.ask(Ship)
+            assertIs<OrderReply.Ok>(ship)
+        } finally {
+            OrderWorkflowHooks.onStateCommitted = null
+        }
 
         val finalState = proxy.state()
         assertEquals(OrderStatus.Shipped, finalState.status)
@@ -34,5 +40,6 @@ class OrderWorkflowTest {
             ),
             proxy.events()
         )
+        assertEquals(listOf(OrderStatus.Shipped), observed)
     }
 }

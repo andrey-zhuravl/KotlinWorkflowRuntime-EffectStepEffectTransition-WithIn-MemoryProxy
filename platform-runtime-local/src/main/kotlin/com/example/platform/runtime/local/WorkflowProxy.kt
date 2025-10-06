@@ -14,7 +14,7 @@ public class WorkflowProxy<S, C, E, R> internal constructor(
     /** Sends the command expecting a reply. */
     public suspend fun ask(command: C): R {
         val deferred = CompletableDeferred<R?>()
-        mailbox.send(CommandEnvelope(command, deferred))
+        mailbox.send(CommandEnvelope(command, deferred, expectsReply = true))
         val result = deferred.await()
         return result ?: error("Workflow $id returned no reply for command $command")
     }
@@ -22,7 +22,7 @@ public class WorkflowProxy<S, C, E, R> internal constructor(
     /** Sends the command without awaiting a reply value. */
     public suspend fun tell(command: C) {
         val deferred = CompletableDeferred<R?>()
-        mailbox.send(CommandEnvelope(command, deferred))
+        mailbox.send(CommandEnvelope(command, deferred, expectsReply = false))
         deferred.await()
     }
 

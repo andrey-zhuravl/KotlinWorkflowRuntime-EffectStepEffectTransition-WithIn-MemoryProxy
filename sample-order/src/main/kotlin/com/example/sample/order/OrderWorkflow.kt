@@ -21,6 +21,11 @@ public data class OrderState(
     val status: OrderStatus
 )
 
+/** Side-effect hooks used by tests to observe workflow behaviour. */
+public object OrderWorkflowHooks {
+    public var onStateCommitted: ((OrderState) -> Unit)? = null
+}
+
 /** Supported commands for the order workflow. */
 @Command
 @Serializable
@@ -131,16 +136,17 @@ public class OrderWorkflow : Workflow<OrderState, OrderCommand, OrderEvent, Orde
             }
         }
         Ship -> {
-            if (state.status != OrderStatus.Approved) {
-                ctx.effects.none<OrderState, OrderEvent, OrderReply>().thenReply {
-                    OrderReply.Error("Only approved orders can be shipped", it)
+            ctx.guard("ship-requires-approved", state, command) { s, _ -> s.status == OrderStatus.Approved }
+                .orReject { OrderReply.Error("Only approved orders can be shipped", it) }
+                .then {
+                    ctx.effects
+                        .persist<OrderState, OrderEvent, OrderReply>(OrderShipped)
+                        .thenTransition { it.copy(status = OrderStatus.Shipped) }
+                        .thenRun { newState ->
+                            OrderWorkflowHooks.onStateCommitted?.invoke(newState)
+                        }
                 }
-            } else {
-                ctx.effects
-                    .persist<OrderState, OrderEvent, OrderReply>(OrderShipped)
-                    .thenTransition { it.copy(status = OrderStatus.Shipped) }
-                    .thenReply { OrderReply.Ok(it) }
-            }
+                .thenReply { OrderReply.Ok(it) }
         }
         Cancel -> {
             if (state.status !in setOf(OrderStatus.Created, OrderStatus.Approved)) {

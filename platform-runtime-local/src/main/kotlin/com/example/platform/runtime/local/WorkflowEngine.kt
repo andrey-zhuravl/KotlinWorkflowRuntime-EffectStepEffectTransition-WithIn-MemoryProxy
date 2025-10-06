@@ -13,12 +13,16 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 
-internal data class CommandEnvelope<C, R>(val command: C, val reply: CompletableDeferred<R?>)
+internal data class CommandEnvelope<C, R>(
+    val command: C,
+    val reply: CompletableDeferred<R?>,
+    val expectsReply: Boolean
+)
 
 /**
  * Executes workflow commands using an in-memory, single-threaded per-instance runtime.
  */
-public class WorkflowEngine<S, C, E, R>(
+public class WorkflowEngine<S, C, E, R> (
     private val workflow: Workflow<S, C, E, R>,
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 ) {
@@ -86,11 +90,20 @@ public class WorkflowEngine<S, C, E, R>(
                 envelope.reply.completeExceptionally(t)
                 continue
             }
-            try {
-                val replyValue = result.reply?.invoke(currentState)
-                envelope.reply.complete(replyValue)
-            } catch (t: Throwable) {
-                envelope.reply.completeExceptionally(t)
+            val replyFn = result.reply
+            if (replyFn != null) {
+                try {
+                    val replyValue = replyFn(currentState)
+                    envelope.reply.complete(replyValue)
+                } catch (t: Throwable) {
+                    envelope.reply.completeExceptionally(t)
+                }
+            } else {
+                if (envelope.expectsReply) {
+                    envelope.reply.completeExceptionally(IllegalStateException("No reply for ask"))
+                } else {
+                    envelope.reply.complete(null)
+                }
             }
         }
     }
